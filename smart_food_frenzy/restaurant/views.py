@@ -115,7 +115,7 @@ def order_items(request):
             'message': f'Order #{order.id} created and processed successfully.',
             'order_id': order.id, 
             "pretty_print":order.pretty_print_order(),
-        }, status=201)
+        }, status=200)
 
     except MenuItem.DoesNotExist:
         return JsonResponse({'error': f"Menu item '{item_name}' does not exist."}, status=404)

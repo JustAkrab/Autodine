@@ -1,15 +1,19 @@
 
 import openai
 import pyttsx3
+import requests
+import random
+import time
 
+# Define the URLs to which the POST requests will be sent
+feasibility_url = 'http://127.0.0.1:8000/check_feasible_items/'  # URL to check feasibility
+order_url = 'http://127.0.0.1:8000/order_items/'  # URL to place the order
 from RealtimeSTT import AudioToTextRecorder
 # from RealtimeTTS import TextToAudioStream, SystemEngine
 
 # engine = SystemEngine() # replace with your TTS engine
 # stream = TextToAudioStream(engine)
 engine = pyttsx3.init() # object creation
-
-
 
 # openai.api_key = "sk-ydPFHZc0r1rAf26AZC3NRgA4sKgjq49qH9Pty16Go9T3BlbkFJafGiYI_374qmS3kGlzD5D4AOTP0uEWes9DMaMceGEA"
 client = openai.OpenAI(api_key="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")
@@ -62,7 +66,7 @@ Instructions:
           - if they are specific set values, they should be a string like this -n- where n is the desired number
 
 3. Conversations and Responses:
-    - If the user hasn’t ordered yet, the "ORDER" field should be empty: "ORDER": {}.
+    - If the user hasn't ordered yet, the "ORDER" field should be empty: "ORDER": {}.
     - The "output" should guide the user to either order more or confirm their request.
     - When the conversation is complete, set "output": "DONE".
 
@@ -94,10 +98,49 @@ Example interaction:
                           if you get the input: 
                           Now process the following user's input as instructed:
                       """
+ 
 
     out_1 = make_api_call(system_prompt, messages)
     out_2 = make_api_call(system_prompt_2, messages=[{"role": "user", "content": out_1}])
-    return out_2
+    try:
+        response = eval(out_2)
+    except:
+        response = {"ORDER":{}, "output":out_2}
+    
+    order = response["ORDER"]
+    done = False
+    if len(order) == 0:
+        out = out_2
+        ai_reply = response["output"]
+    else:
+        payload = order
+        feasibility_response = str(requests.post(feasibility_url, json={'items': payload}).json())
+        print(feasibility_response)
+        messages.append({"role":"system", "content":f"""You have sent a request to the backend to check the inventory whether it is possible to\
+                                                    complete that order and the return you got was {feasibility_response}. Now continue interacting with the client as previously\
+                                                    given that information. Still using the "ORDER":..., "output":... format"""})
+        out_3 = make_api_call(system_prompt=system_prompt, messages=messages)
+        out_4 = make_api_call(system_prompt_2, messages=[{"role": "user", "content": out_3}])
+        out = out_4
+        try:
+            response = eval(out_4)
+        except:
+            response = {"ORDER":{}, "output":out_4}
+        ai_reply = response["output"]
+        
+        if ai_reply.upper().endswith("DONE"):
+            done = True
+            ai_reply = ai_reply[:-4]
+        elif ai_reply.upper().endswith("DONE."):
+            done = True
+            ai_reply = ai_reply[:-5]
+        
+
+        if done:
+            messages = []
+            payload = order
+            order_response = requests.post(order_url, json={'items': payload, 'tip':round(random.uniform(0, 10), 2)})
+    return out, order, ai_reply, messages, done
 
 def make_api_call(system_prompt, messages):
     messages = [{"role": "system", "content": system_prompt}, *messages]
@@ -108,7 +151,6 @@ def make_api_call(system_prompt, messages):
         model="gpt-4o",  # Specifies using the "gpt-4o" model
         # model = "gpt-4-0314",
     )
-
     # Extract the response text from the completion
     response_text = chat_completion.choices[0].message.content
 
@@ -121,21 +163,15 @@ def chatbot_conversation():
     ai_reply = ""
     order = ""
     messages = []
-    while not (ai_reply.upper().endswith("DONE") or ai_reply.upper().endswith("DONE.")):
+    while True:
         # Listen to user's order
         user_input = recorder.text()
         # user_input = input("User: ")
         if user_input != "":
             # print(user_input)
             messages.append({"role": "user", "content": user_input})
-            raw_r = parse_order_with_llm(messages)
-            try:
-                response = eval(raw_r)
-            except:
-                response = {"ORDER":{}, "output":raw_r}
-            ai_reply = response["output"]
+            raw_r, order, ai_reply, messages, done = parse_order_with_llm(messages)
             messages.append({"role":"assistant", "content": raw_r})
-            order = response["ORDER"]
             # print(raw_r)
             # Check if the user said they're done
             # stream.feed(ai_reply)
@@ -143,7 +179,12 @@ def chatbot_conversation():
             # print(ai_reply)   
             engine.say(ai_reply)
             engine.runAndWait()
-    
+            # print(ai_reply)
+            if done:
+                time.sleep(3)
+                messages = []
+                user_input = ""
+                done = False
     print("Final Order: ", order)
 
     """

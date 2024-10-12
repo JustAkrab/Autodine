@@ -12,7 +12,6 @@ class Ingredient(models.Model):
     def __str__(self):
         return self.name
 
-
 class MenuItem(models.Model):
     """Represents the default menu items and their usual ingredients"""
     name = models.CharField(max_length=100)
@@ -22,6 +21,14 @@ class MenuItem(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_ingredients(self):
+        """Returns the ingredients and their required quantities for the menu item."""
+        ingredients_info = {}
+        menu_item_ingredients = MenuItemIngredient.objects.filter(menu_item=self)
+        for item_ingredient in menu_item_ingredients:
+            ingredients_info[item_ingredient.ingredient.name] = item_ingredient.quantity_required
+        return ingredients_info
 
 
 class MenuItemIngredient(models.Model):
@@ -37,7 +44,7 @@ class Order(models.Model):
     """Represents a customer order."""
     created_at = models.DateTimeField(auto_now_add=True)
     is_complete = models.BooleanField(default=False)
-    tip = models.DecimalField(max_digits=5, decimal_places=2, default=0.00, help_text="Tip amount")
+    tip = models.FloatField(default=0.00, help_text="Tip amount")
     # MenuItems with their specific modifications
     menu_items = models.ManyToManyField(MenuItem, through='OrderItem')
 
@@ -129,6 +136,7 @@ class OrderItem(models.Model):
         for item, val in removed.items():
             details += f"  -{val} of {item}\n"
         self.order_print = details
+        self.save()
 
     def pretty_print_item(self):
         """Prints the item with modifications (additional or removed ingredients)."""
@@ -187,7 +195,7 @@ class Inventory(models.Model):
                                           set the exact number for this ingredient")
                 # print(f"ingredient: {ingredient.name}, quantity: {required_quantity}")
                 # Check if inventory has enough stock
-                if required_quantity < 1 or ingredient.quantity_in_stock < required_quantity:
+                if ingredient.quantity_in_stock < required_quantity:
                     response['feasible'] = False
                     response['missing_ingredients'].append({
                         'ingredient': ingredient.name,
