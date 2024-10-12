@@ -1,5 +1,7 @@
 from django.db import models
 from django.db import models
+# from decimal import Decimal
+
 
 class Ingredient(models.Model):
     """Base constituent of food items"""
@@ -14,9 +16,8 @@ class Ingredient(models.Model):
 class MenuItem(models.Model):
     """Represents the default menu items and their usual ingredients"""
     name = models.CharField(max_length=100)
-    price = models.DecimalField(max_digits=5, decimal_places=2)
+    price = models.FloatField(null=False, blank=False)
     description = models.TextField()
-    num_left = models.IntegerField(blank=False, null=False)
     ingredients = models.ManyToManyField(Ingredient, through='MenuItemIngredient')
 
     def __str__(self):
@@ -53,10 +54,10 @@ class Order(models.Model):
         """ Nicely prints the order details with item names, prices, and ingredient modifications. """
         order_details = f"Order #{self.id}:\n"
         for order_item in self.orderitem_set.all():
-            order_item.process_modification()
+            # order_item.process_modification()
             order_details += order_item.pretty_print_item()
         order_details += f"Tip: ${self.tip}\n"
-        order_details += f"Total (including tax): ${self.get_total()}\n"
+        order_details += f"Total (including 20% tax): ${round(self.get_total(), 2)}\n"
         return order_details
 
     def complete_order(self):
@@ -76,13 +77,13 @@ class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE)
     modification = models.TextField(null=True, blank=True)
-    modified_price = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    modified_price = models.FloatField(blank=True, null=True)
     order_print = models.TextField(null=True, blank=True)
     actual_ingredients = models.TextField(null=True, blank=True)
 
     def process_modification(self):
         actual_ingredients = {}
-        marginal_cost = 0
+        marginal_cost = 0.0
         addition, removed, exact = {}, {}, {}
         modification = eval(self.modification)
         # Get all ingredients needed for this menu item
@@ -97,21 +98,22 @@ class OrderItem(models.Model):
                 if type(val) == int:
                     required_quantity += val
                     if val < 0:
-                        removed[item_ingredient] = abs(val)
-                    else:
-                        addition[item_ingredient] = abs(val)
+                        removed[item_ingredient.ingredient.name] = abs(val)
+                    elif val > 0:
+                        addition[item_ingredient.ingredient.name] = abs(val)
                 elif type(val) == str:
                     required_quantity = int(val[1:-1])
                 else:
                     raise ValueError("Unexpected input. We expect either an integer or something like -4- to\
                                         set the exact number for this ingredient")
-            actual_ingredients[ingredient] = required_quantity
-            marginal_cost += (required_quantity - item_ingredient.quantity_required ) * ingredient.cost
+            actual_ingredients[ingredient.name] = required_quantity
+            marginal_cost += (required_quantity - item_ingredient.quantity_required ) * (ingredient.cost)
         
         self.modified_price = self.menu_item.price + marginal_cost
         self.set_order_print(addition, removed, exact)
         self.actual_ingredients = str(actual_ingredients)
-        
+        # print("self.actual: ", self.actual_ingredients)
+        self.save()
 
     def get_modified_price(self):
         """Calculate the price of the item based on any modifications (e.g., extra cheese might cost more)."""
@@ -121,17 +123,16 @@ class OrderItem(models.Model):
         """Sets the order print"""
         details = f"{self.menu_item.name}: ${self.get_modified_price()}\n"
         for item, val in exact:
-            details += f"exactly {val} of {item}\n"
+            details += f"  exactly {val} of {item}\n"
         for item, val in addition.items():
-            details += f"+{val} of {item}\n"
+            details += f"  +{val} of {item}\n"
         for item, val in removed.items():
-            details += f"-{val} of {item}\n"
+            details += f"  -{val} of {item}\n"
         self.order_print = details
-          
+
     def pretty_print_item(self):
         """Prints the item with modifications (additional or removed ingredients)."""
-        print(self.order_print)
-        return 
+        return self.order_print
 
     def update_inventory(self):
         """
@@ -139,8 +140,10 @@ class OrderItem(models.Model):
         Takes into account additional or removed ingredients.
         """
         # Deduct default ingredients for the menu item
+        # print(self.actual_ingredients)
         actual_ingredients = eval(self.actual_ingredients)
-        for ingredient, val in actual_ingredients.items():
+        for ingredient_name, val in actual_ingredients.items():
+            ingredient = Ingredient.objects.get(name=ingredient_name)
             ingredient.quantity_in_stock -= max(0, val)
             ingredient.save()
         
@@ -182,7 +185,7 @@ class Inventory(models.Model):
                     else:
                         raise ValueError("Unexpected input. We expect either an integer or something like -4- to\
                                           set the exact number for this ingredient")
-                print(f"ingredient: {ingredient.name}, quantity: {required_quantity}")
+                # print(f"ingredient: {ingredient.name}, quantity: {required_quantity}")
                 # Check if inventory has enough stock
                 if required_quantity < 1 or ingredient.quantity_in_stock < required_quantity:
                     response['feasible'] = False
@@ -215,7 +218,7 @@ class Inventory(models.Model):
                 required_quantity = item_ingredient.quantity_required
 
                 # Include any additional ingredients passed in
-                if ingredient.name in additional_ingredients:
+                if ingredient.name in additional_ingredients: # POTENTIAL BUG HERE WE SET OPTION
                     required_quantity += additional_ingredients[ingredient.name]
 
                 # Update ingredient stock

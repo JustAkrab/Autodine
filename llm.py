@@ -1,167 +1,90 @@
-import speech_recognition as sr
-import requests
+
 import openai
-import json
+from RealtimeSTT import AudioToTextRecorder
 
 
-GOOGLE_CLOUD_SPEECH_CREDENTIALS = r"""{
-  "type": "service_account",
-  "project_id": "centered-flash-434322-u4",
-  "private_key_id": "4c7b398336b9b0fbe06385599e8d5b16ddb28811",
-  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDC6Z6xYg/mYbiZ\nNMm67OjXDGjtGVdaApk2wC1X3Ovr4V0rlo+6eGGzGr+ZsI6Jb7aZfu6ms/1BLRko\n2Q1hZZp5PTOmqKhpgFShzJpsc2dQWhEnXgZu39SzIrmGV1DUikZjGYB+gEXbT15u\nwW0vJaGrfZ1SWmlOStrWHLDihmFCwyGh2wZe/dCqNLVZbQkNFBmHHY1HNnpUoBlF\noNp3Jf0TFIa0OWQPGpEvqrmpGi+SaWyBl+oR7vRHp0Rtqz8xT67qPRjfPfCS3Y8/\n9qOtbvTKfWdVHW7Vf+myOIKBwwKeTvy8sx67/Zk36AujgO+lMKIFa1RWwJhSBhs/\nitZfc6ldAgMBAAECggEAHJqwFS8jeeINzGobUCk+yHnZQjEjCSIdfb6j844yj0o3\nuVMIt8sSkiLS9d6bzx6hE74K5FXAzRpYZA6/2x3P7DVSSbCHD/3rLa2QXL8Y7TQH\n6sOZOmyd00Y9fNzT5MUq1utMrgPsJzxqyuKXFUFhYatMdblaqp3rUgXMOF+T5s8+\nG4rHcBM8GgubO1p//0GZVKwmHGafxZN+oJVk8WI6yBs0f2XhOVJfXj9qNr8NpXE3\nUsypwutVtGKQcCeKCdoSCjJEn2Oa1jesHUI8v0Xle8mNAj+q+tTrc0MbYOLFCciy\nupKEucGKDIA+lwt7jVlfh4TEGWsqQkkLbdwKXWi9DwKBgQDxwStmHg49UfhJ9bWZ\nrgHes1L5I7Tri9MbsVQ2CJE2g0t2+9sz7xlECgqftjeROylBf81yymtHv7dKAU65\nM7ORd4CP4QiOiNR+D+6B2t52GlCaX7nqWoNbTU5MHU67o1AC6pzoEBqDHbgJSl5G\n0u0xP/54IPzEmwIzz0G35r6TbwKBgQDOZdic1A7VMVIObO3GDWp3zxtztW7k/N/r\nOYHpWrKr1oDWVcx6RnXARsz4W6S8gLA+/LvlVJuCxGVNge9umNar3q3I/o6vxUmO\nZ96pjogLw3DF61BY1klKZUpaxPtn8upy/0ofXXzj6Pboi0DxXdrh5tXV212m7siX\nOuxfzOY58wKBgG7kuvGWq9V4+jmC2hBqfzUWcOMTe/PoKag0SXqXp3Sn+T/U+5Hx\nBVfuez0Tqp2V07DV3Png3CEHUh5CR0gw7Re3B2P4R6KKJV7GFBPAv/bQz1RgwLk9\nV6/T4CyN7QWpPhR4Zg0VBfRK95ZbZK98JY1H24RjLU9KA1KcqXqf/59FAoGAYBYN\n58TZOusBFnIjp6YrQKeMUivO+o+29t0I28g7kcAErsO2s94Fh4PufFi9snv+kPQ7\nzSG8W/5uYszw2H4SwmSiZwYLC00/VyqIAEu4jjFoWNuZxiHMcPQCz4sQt23hM7Qh\nn8R4FeoouE3L6BIXij9aoXrEeKiFfdISpO7Q530CgYAOzGC4V3R2sGCOnXqET9Iv\n5Pj1KMC6n8fu1NBP/O85IDsDN+RCtuMemWFLwyq8xcgYwkfDbH08j3WX7SqohPlY\n2e/epsN/nDxkr8mZjy9s3rUwGsGQ/P5ftCl/g5uw0L/vTr1fX8R2sMOHVXIs41T1\nWtBlos3R+QLX4vEoXNdw8w==\n-----END PRIVATE KEY-----\n",
-  "client_email": "owner-83@centered-flash-434322-u4.iam.gserviceaccount.com",
-  "client_id": "112648814440847952795",
-  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-  "token_uri": "https://oauth2.googleapis.com/token",
-  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/owner-83%40centered-flash-434322-u4.iam.gserviceaccount.com",
-  "universe_domain": "googleapis.com"
-}
-"""
 
 # openai.api_key = "sk-ydPFHZc0r1rAf26AZC3NRgA4sKgjq49qH9Pty16Go9T3BlbkFJafGiYI_374qmS3kGlzD5D4AOTP0uEWes9DMaMceGEA"
 client = openai.OpenAI(api_key="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")
 SERVER_URL = ""
-r = sr.Recognizer()
-
 
 def parse_order_with_llm(messages):
 
-    system_prompt = f"""
-    You are a food order assistant. The user will give an order in natural language, and your task is to extract the food items and their customizations, if any, in a structured JSON format.
+    system_prompt = """
+You are a food ordering assistant, responsible for processing customer orders from natural language input and translating them into a structured JSON format. The user will provide their food order, and your task is to extract the food items and any customizations or modifications made to them.
 
-    Here is the menu so you know what kind of meals the user can get:
+Instructions:
+1. Menu Items: You have the following menu items available for ordering:
+    - Burger: Delicious beef burger
+    - Fries: Crispy golden fries
+    - Chicken Sandwich: Grilled chicken sandwich with mayo and lettuce
+    - Bacon Cheeseburger: Beef patty with bacon, cheese, and lettuce
+    - Avocado Toast: Fresh avocado spread on toasted bread
+    - BLT Sandwich: Bacon, lettuce, and tomato sandwich
+    - Caesar Salad: Classic Caesar salad with chicken, croutons, and Caesar dressing
+    - Egg Salad Sandwich: Egg salad sandwich with mayo on toasted bread
+    - Veggie Burger: Healthy veggie patty burger with lettuce, tomato, and onion
+    - Spinach & Egg Wrap: Healthy spinach and egg wrap
+    - Coffee: Freshly brewed coffee
+    - Classic Hot Dog: Hot dog with ketchup and mustard
 
-    Menu Item: Burger, Description: Delicious beef burger
-    Menu Item: Fries, Description: Crispy golden fries
-    Menu Item: Chicken Sandwich, Description: Grilled chicken sandwich with mayo and lettuce
-    Menu Item: Bacon Cheeseburger, Description: Beef patty with bacon, cheese, and lettuce
-    Menu Item: Avocado Toast, Description: Fresh avocado spread on toasted bread
-    Menu Item: BLT Sandwich, Description: Bacon, lettuce, and tomato sandwich
-    Menu Item: Caesar Salad, Description: Classic Caesar salad with chicken, croutons, and Caesar dressing
-    Menu Item: Egg Salad Sandwich, Description: Egg salad sandwich with mayo on toasted bread
-    Menu Item: Veggie Burger, Description: A healthy veggie patty burger with lettuce, tomato, and onion
-    Menu Item: Spinach & Egg Wrap, Description: Healthy spinach and egg wrap
-    Menu Item: Coffee, Description: Freshly brewed coffee
-    Menu Item: Classic Hot Dog, Description: Hot dog with ketchup and mustard
+2. Response Format: Once the user provides their order, extract the items and modifications into the following format:
 
-    Here is the format you should use for your extracted order:
-    {{
-        "food_item_1": {{"modification_1": value, "modification_2": value, ...}},
-        "food_item_2": {{}},  # No modifications
-        ...
-    }}
+    "ORDER": {
+        "food_item_1": {"modification_1": value, "modification_2": value, ...},
+        "food_item_2": {}
+    },
+    "output": "Appropriate response to continue or end the conversation."
 
-    1) Always use the  {{"ORDER":..., "output":...}} format for your response.
-    2) The value of "output" should be "DONE" when the conversation is over.
-    3) "ORDER" should be empty if the user hasn't ordered anything yet
+    Note: - All those values should be integers if they are additions or removals.
+          - if they are specific set values, they should be a string like this -n- where n is the desired number
 
-    Example 1:
-        User Input: "I'd like a burger with extra cheese and a side of fries, and also a chicken biryani with 2 extra bowls rice and extra chicken."
-        Assistant Reply: 
-        {{"ORDER":
-        {{
-            "Burger": {{"Cheese": 2}},
-            "Fries": {{}},
-            "Chicken Biryani": {{"Rice": 2, "Chicken": 2}}
-        }},
-        "output":"Gotcha. Would like anything else?"
-        }}
+3. Conversations and Responses:
+    - If the user hasn’t ordered yet, the "ORDER" field should be empty: "ORDER": {}.
+    - The "output" should guide the user to either order more or confirm their request.
+    - When the conversation is complete, set "output": "DONE".
 
-        User Input: "No that's it."
-        Assistant Reply:
-        {{"ORDER":
-        {{
-            "Burger": {{"Cheese": 2}},
-            "Fries": {{}},
-            "Chicken Biryani": {{"Rice": 2, "Chicken": 2}}
-        }},
-        "output":"DONE"
-        }}
+4. Handling Edge Cases:
+    - If the user uses inappropriate language, respond politely and redirect to the menu or confirm if they want to order.
+    - For ambiguous orders or multiple customizations, clarify with the user to confirm the exact details.
+    - Always adapt your response to the tone and details provided by the user.
 
-        
-    Example 2:
-        User Input: "Hello bitch."
-        Assistant Reply:
-        {{"ORDER":
-        {{
-        }},
-        "output":"Hello. Sorry if I put you in a bad mood. Would like you to get some food?"
-        }}
+5. When you stop interacting with the customer, your output value should end with DONE
 
-        User Input: "Uhmm fuck. Do you guys have burgers?"
-        Assistant Reply:
-        {{"ORDER":
-            {{}},
-         "output":"Yes we do! Do you just want a regular burger then?"
-        }}
+Example interaction:
+    - User Input: "I'd like a burger with extra cheese and a side of fries, and also a chicken biryani with 2 extra bowls rice and extra chicken. No pickles please on my burger."
+    - Assistant Response:
+        "ORDER": {"Burger": {"Cheese": 2, "Pickles":"-0-"},"Fries": {},"Chicken Biryani": {"Rice": 2, "Chicken": 1}}, "output": "Gotcha. Would like anything else?"
+"""
 
-        User Input: "All right then. I want a burger but with extra cheese."
-        Assistant Reply:
-        {{"ORDER":
-            {{"Burger":{{"Cheese": 1}},
-            }},
-          "output":"Do you just want 1 piece of extra cheese or more?"
-        }}
+    system_prompt_2 = """ You are a machine that takes text returns what is supposed to be the food ORDER part of the text and the reply part. Sometimes there is no ORDER part.
+                          You should parse the text and strictly return the processed text in the following format:
+                        
+                          For example, if you get the input: "ORDER": {"Burger": {"Cheese": 2, "Pickles":"-0-"},"Fries": {},"Chicken Biryani": {"Rice": 2, "Chicken": 1}}, "output": "Gotcha. Would like anything else?"\
+                          Your output should be: {"ORDER": {"Burger": {"Cheese": 2, "Pickles":"-0-"},"Fries": {},"Chicken Biryani": {"Rice": 2, "Chicken": 1}}, "output": "Gotcha. Would like anything else?"}
 
-        User Input:"Omg, don't be annoying!!"
-        Assistant Reply:
-        {{"ORDER":
-            {{"Burger":{{"Cheese": 1}},
-            }},
-            "output":"Oh, I am so sorry! I am sincerely sorry. So is one burger with an extra piece of cheese enough?"
-        }}
+                          if you get the input: "Would you like something else?"
+                          your output should be: {"ORDER":{}, "output": "Would you like something else?"}
 
-        User Input: "No. I want two extra pieces."
-        Assistant Reply:
-        {{"ORDER":
-            {{"Burger":{{"Cheese": 2}},
-            }},
-            "output":"All right! Is that all?"
-        }}
+                          if you get the input: "````json {"ORDER":{"Pizza":{}, "Pork":{"Tomato":"-7-"}}, "output":"DONE"}````"
+                          your output should be: {"ORDER":{"Pizza":{}, "Pork":{"Tomato":"-7-"}}, "output":"DONE"} 
+                        
+                          if you get the input: 
+                          Now process the following user's input as instructed:
+                      """
 
-        User Input:"Yes bitch"
-        Assistant Reply:
-        {{"ORDER":
-            {{"Burger":{{"Cheese": 2}},
-            }},
-            "output":"All right!"
-        }}
-    
-    Example 3:
-        User Input: "Hello"
-        Assistant Reply:
-        {{"ORDER":
-            {{
-            }},
-            "output":"Hello! Would like to get some food?"
-        }}      
+    out_1 = make_api_call(system_prompt, messages)
+    out_2 = make_api_call(system_prompt_2, messages=[{"role": "user", "content": out_1}])
+    return out_2
 
-        User Input: "Hell no!"
-        Assistant Reply:
-        {{"ORDER":
-            {{
-            }},
-            "output":"We have some really good meals like the Classic Hot Dog and Avocado Toast. Are you sure you do not want anything?"
-        }}      
-
-        User Input: ""
-        Assistant Reply:
-        {{"ORDER":
-            {{
-            }},
-            "output":"DONE"
-        }}      
-    Now here are the conversations between a user and the assistant so far. Continue being the assistant
-    """
-
-
+def make_api_call(system_prompt, messages):
     messages = [{"role": "system", "content": system_prompt}, *messages]
 
     # Request a chat completion from the OpenAI API based on the conversation so far
     chat_completion = client.chat.completions.create(
         messages=messages,
         model="gpt-4o",  # Specifies using the "gpt-4o" model
+        # model = "gpt-4-0314",
     )
 
     # Extract the response text from the completion
@@ -169,60 +92,84 @@ def parse_order_with_llm(messages):
 
     return response_text.strip()
 
+def end_of_convo(messages):
+    system_prompt = "Is the conversation over. Reply with just a YES or NO"
+    messages = [*messages, {"role": "system", "content": system_prompt}]
+
+    # Request a chat completion from the OpenAI API based on the conversation so far
+    chat_completion = client.chat.completions.create(
+        messages=messages,
+        model="gpt-4o",  # Specifies using the "gpt-4o" model
+        # model = "gpt-4-0314",
+    )
+
+    # Extract the response text from the completion
+    response_text = chat_completion.choices[0].message.content
+
+    return response_text.strip()
+
+user_input = ""
+def process_text(text):
+    global user_input
+    user_input = text
+    print(text)
+
 
 def chatbot_conversation():
-    # user_id = "user_1"  # Simulating user ID, this could be dynamically generated per user
-    """
-    done = "nothing"
+    recorder = AudioToTextRecorder(language="en")
+    ai_reply = ""
     order = ""
     messages = []
-    while not done.endswith("DONE"):
+    while not (ai_reply.upper().endswith("DONE") or ai_reply.upper().endswith("DONE.")):
         # Listen to user's order
-        user_input = input("User: ")
-        messages.append({"role": "user", "content": user_input})
-        # Text
-        raw_r = parse_order_with_llm(messages)
-        print(raw_r)
-        response = eval(raw_r)
-        done = response["output"]
-        messages.append({"role":"assistant", "content": done})
-        order = response["ORDER"]
-        # Check if the user said they're done
-        print(done)   
-    """
+        # user_input = input("User: ")
+        user_input = recorder.text()
+        # user_input = input("User: ")
+        if user_input != "":
+            print(user_input)
+            messages.append({"role": "user", "content": user_input})
+            # Text
+            raw_r = parse_order_with_llm(messages)
+            # messages.append({"role":"user", "content": """respond only with the syntax: {{"ORDER":{{...}},"output":...}}"""})
+            # raw_r = parse_order_with_llm(messages)
+            # print(raw_r)
+            try:
+                response = eval(raw_r)
+            except:
+                response = {"ORDER":{}, "output":raw_r}
+            ai_reply = response["output"]
+            messages.append({"role":"assistant", "content": raw_r})
+            order = response["ORDER"]
+            # print(raw_r)
+            # Check if the user said they're done
+            print(ai_reply)   
+    
+    print("Final Order: ", order)
 
+    """
     done = ""
     counter = 0
     messages = []
+    recorder = AudioToTextRecorder()
     while True:
-        with sr.Microphone() as source:
-            # print("Listening for your order...")
-            audio = r.listen(source) 
-            text = ""
-            try:
-                text = r.recognize_google_cloud(audio, credentials_json=GOOGLE_CLOUD_SPEECH_CREDENTIALS)
-            except sr.UnknownValueError:
-                pass
-            except sr.RequestError as e:
-                pass
-            # Listen to user's order
-            # user_input = input("User: ")
-            if text != "":
-                user_input = text
-                messages.append({"role": "user", "content": user_input})
-                # Text
-                raw_r = parse_order_with_llm(messages)
-                # print(raw_r)
-                response = eval(raw_r)
-                done = response["output"]
-                messages.append({"role":"assistant", "content": done})
-                order = response["ORDER"]
-                print(done)
-                # Check if the user said they're done
-                if done == "DONE":
-                    messages = []
-                    print("Order: ", order)
-
+        text = recorder.text(process_text)
+        if text != "":
+            user_input = text
+            messages.append({"role": "user", "content": user_input})
+            # Text
+            raw_r = parse_order_with_llm(messages)
+            # print(raw_r)
+            response = eval(raw_r)
+            done = response["output"]
+            messages.append({"role":"assistant", "content": done})
+            order = response["ORDER"]
+            print(done)
+            # Check if the user said they're done
+            if done == "DONE":
+                messages = []
+                print("Order: ", order)
+    
+    """
 
 if __name__ == "__main__":
     chatbot_conversation()

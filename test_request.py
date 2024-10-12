@@ -1,7 +1,10 @@
-import requests
 
-# Define the URL to which the POST request will be sent
-url = 'http://127.0.0.1:8000/check_feasible_items/'  # Replace with the actual URL
+import requests
+import random
+
+# Define the URLs to which the POST requests will be sent
+feasibility_url = 'http://127.0.0.1:8000/check_feasible_items/'  # URL to check feasibility
+order_url = 'http://127.0.0.1:8000/order_items/'  # URL to place the order
 
 # Define multiple payloads for different test cases
 payloads = [
@@ -53,16 +56,37 @@ payloads = [
 def test_payloads(payloads):
     for i, payload in enumerate(payloads, 1):
         print(f"Testing payload {i}...")
-        try:
-            response = requests.post(url, json={'items': payload})
 
-            # Check if the request was successful (HTTP status code 200 OK)
-            if response.status_code == 200:
-                # Print the response (usually JSON data)
-                print(f"Success (Payload {i}):", response.json())
+        try:
+            # Step 1: Check if the items are feasible
+            feasibility_response = requests.post(feasibility_url, json={'items': payload})
+
+            # Check if the feasibility request was successful
+            if feasibility_response.status_code == 200:
+                feasibility_data = feasibility_response.json()
+
+                # Check if all items are feasible
+                all_feasible = all(item['feasible'] for item in feasibility_data.values())
+
+                if all_feasible:
+                    print(f"All items in payload {i} are feasible. Proceeding with the order...")
+
+                    # Step 2: If feasible, place the actual order
+                    order_response = requests.post(order_url, json={'items': payload, 'tip':round(random.uniform(0, 10), 2)})
+
+                    if order_response.status_code == 201:  # Order successfully created and processed
+                        print(f"Order placed successfully for payload {i}:")
+                        data = eval(str(order_response.json()))
+                        print(data["pretty_print"])
+                    else:
+                        print(f"Failed to place order for payload {i}: {order_response.status_code} {order_response.text}")
+
+                else:
+                    print(f"Some items in payload {i} are not feasible:", feasibility_data)
+
             else:
-                # Print the error message if the request failed
-                print(f"Error (Payload {i}):", response.status_code, response.text)
+                # Print the error message if the feasibility check failed
+                print(f"Error checking feasibility for payload {i}: {feasibility_response.status_code}, {feasibility_response.text}")
 
         except requests.exceptions.RequestException as e:
             # Handle any exceptions that may occur during the request
