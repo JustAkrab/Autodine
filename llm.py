@@ -9,13 +9,12 @@ import time
 feasibility_url = 'http://127.0.0.1:8000/check_feasible_items/'  # URL to check feasibility
 order_url = 'http://127.0.0.1:8000/order_items/'  # URL to place the order
 from RealtimeSTT import AudioToTextRecorder
-# from RealtimeTTS import TextToAudioStream, SystemEngine
+# from RealtimeTTS import TextToAudioStream, SystemEngine, GTTSEngine
 
 # engine = SystemEngine() # replace with your TTS engine
+# engine = GTTSEngine()
 # stream = TextToAudioStream(engine)
 engine = pyttsx3.init() # object creation
-
-# openai.api_key = "sk-ydPFHZc0r1rAf26AZC3NRgA4sKgjq49qH9Pty16Go9T3BlbkFJafGiYI_374qmS3kGlzD5D4AOTP0uEWes9DMaMceGEA"
 client = openai.OpenAI(api_key="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")
 SERVER_URL = ""
 
@@ -181,36 +180,13 @@ def chatbot_conversation():
             engine.runAndWait()
             # print(ai_reply)
             if done:
+                print("Done!")
                 time.sleep(3)
+                print("Ready for next customer.")
                 messages = []
                 user_input = ""
                 done = False
-    print("Final Order: ", order)
-
-    """
-    done = ""
-    counter = 0
-    messages = []
-    recorder = AudioToTextRecorder()
-    while True:
-        text = recorder.text(process_text)
-        if text != "":
-            user_input = text
-            messages.append({"role": "user", "content": user_input})
-            # Text
-            raw_r = parse_order_with_llm(messages)
-            # print(raw_r)
-            response = eval(raw_r)
-            done = response["output"]
-            messages.append({"role":"assistant", "content": done})
-            order = response["ORDER"]
-            print(done)
-            # Check if the user said they're done
-            if done == "DONE":
-                messages = []
-                print("Order: ", order)
-    
-    """
 
 if __name__ == "__main__":
     chatbot_conversation()
+    # test_tts()

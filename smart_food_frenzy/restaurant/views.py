@@ -3,12 +3,58 @@ import traceback
 
 # Create your views here.
 
-from django.http import JsonResponse
+from django.http import JsonResponse, StreamingHttpResponse
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt  # Import csrf_exempt decorator
 from .models import Inventory, MenuItem, OrderItem, Order
 import json
+import time
 
+# Dashboard info structure to store changes
+dashboard_info = {
+    "add_to_db": [],
+    "remove_from_db": [],
+    "previous items": set(),
+}
+
+# Update dashboard info based on items and their feasibility
+def update_dashboard(items, feasibility):
+    dashboard_info
+    items_keys = set(items.keys())
+    
+    # Add new items to the dashboard info
+    for item in items_keys:
+        if item not in dashboard_info["previous items"]:
+            dashboard_info["add_to_db"].append({"name": item, "request": items[item], "feasibility": feasibility.get(item, "unknown")})
+    
+    # Remove items that are no longer in the current items set
+    for prev_item in dashboard_info["previous items"]:
+        if prev_item not in items_keys:
+            dashboard_info["remove_from_db"].append({"name": prev_item})
+    
+    # Update the previous items set
+    dashboard_info['previous items'] = items_keys
+
+def event_stream():
+    while True:
+        time.sleep(1)
+
+        # Convert the 'previous items' set to a list for JSON serialization
+        dashboard_info_copy = dashboard_info.copy()  # Create a copy to avoid modifying the original
+        dashboard_info_copy['previous items'] = list(dashboard_info_copy['previous items'])
+
+        # Convert the dashboard_info to JSON and stream it
+        dashboard_json = json.dumps(dashboard_info_copy)
+        yield f"data: {dashboard_json}\n\n"
+
+        # Clear the add/remove lists after streaming the data
+        dashboard_info["add_to_db"].clear()
+        dashboard_info["remove_from_db"].clear()
+
+
+# SSE view to stream data to the client
+def sse_view(request):
+    return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
 @csrf_exempt  # Disable CSRF protection for this view
 @require_POST
 def check_feasible_items(request):
@@ -48,7 +94,7 @@ def check_feasible_items(request):
         for item_name, additional_ingredients in items.items():
             # Check if the item is feasible in the inventory
             feasibility[item_name] = inventory.is_feasible(item_name, additional_ingredients)
-
+        update_dashboard(items, feasibility)
         # Return the feasibility result as JSON
         return JsonResponse(feasibility, status=200)
 
@@ -127,3 +173,5 @@ def order_items(request):
             'error': str(e),
             'traceback': error_trace
         }, status=500)
+
+
