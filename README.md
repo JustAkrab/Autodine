@@ -10,7 +10,7 @@ Auto Dine is an innovative automated food ordering system designed for smart cit
 - **Real-Time Inventory Updates**: Automatically updates inventory based on user orders to ensure availability.
 - **User-Friendly Dashboard**: View your choices and track your order status in an engaging interface.
 - **Future-Ready Technology**: Designed to adapt and scale for applications in various sectors, including healthcare and retail.
-<br>
+
 
 ## 🛠️ Getting Started
 
