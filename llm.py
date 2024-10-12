@@ -1,12 +1,34 @@
 
 import openai
+import pyttsx3
+
 from RealtimeSTT import AudioToTextRecorder
+# from RealtimeTTS import TextToAudioStream, SystemEngine
+
+# engine = SystemEngine() # replace with your TTS engine
+# stream = TextToAudioStream(engine)
+engine = pyttsx3.init() # object creation
 
 
 
 # openai.api_key = "sk-ydPFHZc0r1rAf26AZC3NRgA4sKgjq49qH9Pty16Go9T3BlbkFJafGiYI_374qmS3kGlzD5D4AOTP0uEWes9DMaMceGEA"
 client = openai.OpenAI(api_key="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")
 SERVER_URL = ""
+
+menu = """
+    - Burger: Delicious beef burger
+    - Fries: Crispy golden fries
+    - Chicken Sandwich: Grilled chicken sandwich with mayo and lettuce
+    - Bacon Cheeseburger: Beef patty with bacon, cheese, and lettuce
+    - Avocado Toast: Fresh avocado spread on toasted bread
+    - BLT Sandwich: Bacon, lettuce, and tomato sandwich
+    - Caesar Salad: Classic Caesar salad with chicken, croutons, and Caesar dressing
+    - Egg Salad Sandwich: Egg salad sandwich with mayo on toasted bread
+    - Veggie Burger: Healthy veggie patty burger with lettuce, tomato, and onion
+    - Spinach & Egg Wrap: Healthy spinach and egg wrap
+    - Coffee: Freshly brewed coffee
+    - Classic Hot Dog: Hot dog with ketchup and mustard
+"""
 
 def parse_order_with_llm(messages):
 
@@ -92,47 +114,21 @@ def make_api_call(system_prompt, messages):
 
     return response_text.strip()
 
-def end_of_convo(messages):
-    system_prompt = "Is the conversation over. Reply with just a YES or NO"
-    messages = [*messages, {"role": "system", "content": system_prompt}]
-
-    # Request a chat completion from the OpenAI API based on the conversation so far
-    chat_completion = client.chat.completions.create(
-        messages=messages,
-        model="gpt-4o",  # Specifies using the "gpt-4o" model
-        # model = "gpt-4-0314",
-    )
-
-    # Extract the response text from the completion
-    response_text = chat_completion.choices[0].message.content
-
-    return response_text.strip()
-
-user_input = ""
-def process_text(text):
-    global user_input
-    user_input = text
-    print(text)
-
-
 def chatbot_conversation():
-    recorder = AudioToTextRecorder(language="en")
+    recorder = AudioToTextRecorder(language="en", spinner=False)
+    print("Here is the MENU: \n")
+    print(menu)
     ai_reply = ""
     order = ""
     messages = []
     while not (ai_reply.upper().endswith("DONE") or ai_reply.upper().endswith("DONE.")):
         # Listen to user's order
-        # user_input = input("User: ")
         user_input = recorder.text()
         # user_input = input("User: ")
         if user_input != "":
-            print(user_input)
+            # print(user_input)
             messages.append({"role": "user", "content": user_input})
-            # Text
             raw_r = parse_order_with_llm(messages)
-            # messages.append({"role":"user", "content": """respond only with the syntax: {{"ORDER":{{...}},"output":...}}"""})
-            # raw_r = parse_order_with_llm(messages)
-            # print(raw_r)
             try:
                 response = eval(raw_r)
             except:
@@ -142,7 +138,11 @@ def chatbot_conversation():
             order = response["ORDER"]
             # print(raw_r)
             # Check if the user said they're done
-            print(ai_reply)   
+            # stream.feed(ai_reply)
+            # stream.play_async()
+            # print(ai_reply)   
+            engine.say(ai_reply)
+            engine.runAndWait()
     
     print("Final Order: ", order)
 
