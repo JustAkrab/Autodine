@@ -152,7 +152,7 @@ Feel free to modify or expand upon these FAQs based on your project's specifics 
 
 ## 📬 Contact
 
-For any questions or further assistance, please reach out at (sohancollege27@gmail.com)[sohancollege27@gmail.com].
+For any questions or further assistance, please reach out to [sohancollege27@gmail.com].
 
 ---
 
