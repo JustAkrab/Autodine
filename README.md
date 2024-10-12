@@ -2,7 +2,7 @@
 
 Auto Dine is an innovative automated food ordering system designed for smart cities, inspired by the evolving landscape of urban dining experiences. In light of recent developments in the industry, Auto Dine aims to enhance the drive-through experience by providing seamless and efficient food ordering through advanced automation.
 
-<br><br>
+<br>
 
 ## 🚀 Features
 
@@ -90,6 +90,7 @@ We welcome your contributions to make <b>Auto Dine</b> even better! Whether you 
 A: Inventory is updated in real-time based on user orders, ensuring accurate availability.
 Sure! Here are some additional FAQs that you could include in your README for Auto Dine:
 
+---
 
 **Q: What platforms does Auto Dine support?**  
 A: Auto Dine is designed for deployment in smart city environments but can be adapted for various platforms, including web and mobile.
@@ -150,4 +151,3 @@ For any questions or further assistance, please reach out at (sohancollege27@gma
 
 ---
 
-Feel free to adjust the placeholders and any content to fit your project’s specifics!
