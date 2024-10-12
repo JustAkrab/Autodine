@@ -16,8 +16,9 @@ Auto Dine is an innovative automated food ordering system designed for smart cit
 
 - Ensure you have Python 3.7 or higher installed.
 - Set up an OpenAI API account to access the AI functionalities.
-- 
+  
 <br>
+
 ## 🔧 Installation
 
 Follow these steps to install and run Auto Dine on your local machine:
@@ -52,6 +53,7 @@ To start using Auto Dine, follow these simple steps:
 3. **Interact with the system**: Use voice commands to place your order.
 4. **View your dashboard**: Monitor your selections and order progress in real-time.
 <br>
+
 ## 📷 Screenshots
 
 ![Dashboard](link_to_your_dashboard_screenshot)
@@ -81,6 +83,7 @@ We welcome your contributions to make <b>Auto Dine</b> even better! Whether you 
 6. **Open a pull request**.
    
 <br>
+
 ## 🗺️ Roadmap
 
 - [ ] Expand the application for use in pharmacies and other retail environments.
