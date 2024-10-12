@@ -156,65 +156,12 @@
         </div>
 
     </div>
-
+    <script src="script.js"></script>
     <script>
-        async function highlightCards(){
-            try{
-                console.log('Fetching orders');
-                // const response = await fetch('https://');
-                // const data = await response.json();
-                const data = {
-                    ORDER: {
-                        "Burger": { "Cheese": 2, "Tomato":2 },
-                        "Caesar Salad": { "Croutons":  2}
-                    }
-                };
-
-                const orders = data.ORDER;
-
-                for (const[foodItem, modifications] of Object.entries(orders)){
-                    console.log(`Processing food item: ${foodItem}`);
-                    const card = document.querySelector(`#item-${foodItem.replace(/\s+/g, '-')}`);
-                    if (card){
-                        console.log(`Found card for food item: ${foodItem}`);
-                        const parentCard = card.parentElement;
-                        parentCard.style.transform = 'scale(1.1)';
-                        parentCard.style.transition = 'transform 0.4s';
-                        
-
-
-                        for (const[modification,value] of Object.entries(modifications)){
-                            console.log(`Highlighting modification: ${modification}`);
-                            const modificationElement = parentCard.querySelector(`.mod-${modification}`);
-                            if (modificationElement){
-                                modificationElement.style.backgroundColor = 'lightblue';
-                            } else {
-                                console.log(`Modification not found: ${modification}`);
-                            }
-
-                        }
-
-                        setTimeout(() => {
-                            parentCard.style.transform = 'scale(1)';
-
-                            for (const[modification,value] of Object.entries(modifications)){
-                                const modificationElement = parentCard.querySelector(`.mod-${modification}`);
-                                if (modificationElement){
-                                    modificationElement.style.backgroundColor = '';
-                                }
-                            }
-
-                        }, 1000);
-                    } else {
-                        console.log(`Card not found for food item: ${foodItem}`);
-                    }
-                }
-            }catch(error){
-                console.error('Error fetching orders', error);
-            }
-        }
-
-        highlightCards();
+        document.addEventListener('DOMContentLoaded', () => {
+            highlightCards();
+        });
     </script>
+        
 </body>
 </html>
