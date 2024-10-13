@@ -15,10 +15,11 @@ dashboard_info = {
     "add_to_db": [],
     "remove_from_db": [],
     "previous items": set(),
+    "total": 0.0
 }
 
 # Update dashboard info based on items and their feasibility
-def update_dashboard(items, feasibility):
+def update_dashboard(items, feasibility, total):
     dashboard_info
     items_keys = set(items.keys())
     
@@ -34,6 +35,7 @@ def update_dashboard(items, feasibility):
     
     # Update the previous items set
     dashboard_info['previous items'] = items_keys
+    dashboard_info["total"] = total
 
 def event_stream():
     while True:
@@ -55,6 +57,11 @@ def event_stream():
 # SSE view to stream data to the client
 def sse_view(request):
     return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
+
+def menu_view(request):
+    menu_items = MenuItem.objects.all()  # Fetch all menu items
+    return render(request, 'restaurant/menu_items.html', {'menu_items': menu_items})
+
 @csrf_exempt  # Disable CSRF protection for this view
 @require_POST
 def check_feasible_items(request):
@@ -89,12 +96,18 @@ def check_feasible_items(request):
 
         # Get the current inventory instance (assuming you have only one inventory object)
         inventory = Inventory.objects.first()
-
+        total_order_cost, stop = 0, False
         # Loop through each menu item in the input dictionary
         for item_name, additional_ingredients in items.items():
             # Check if the item is feasible in the inventory
             feasibility[item_name] = inventory.is_feasible(item_name, additional_ingredients)
-        update_dashboard(items, feasibility)
+            if "total_cost" not in feasibility[item_name]:
+                stop = True 
+                total_order_cost = 0
+            elif not stop:
+                total_order_cost += feasibility[item_name]["total_cost"]
+
+        update_dashboard(items, feasibility, total_order_cost * 1.20) # 1.20 for taxes
         # Return the feasibility result as JSON
         return JsonResponse(feasibility, status=200)
 
@@ -154,7 +167,10 @@ def order_items(request):
 
         # Mark the order as complete
         order.complete_order()
-
+        dashboard_info["add_to_db"].clear()
+        dashboard_info["remove_from_db"].clear()
+        dashboard_info["previous items"].clear()
+        dashboard_info["total"] = 0.0
         # Return success response
         return JsonResponse({
             'status': 'success',

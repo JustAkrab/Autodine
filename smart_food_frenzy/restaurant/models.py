@@ -1,5 +1,8 @@
 from django.db import models
 from django.db import models
+import os
+from django.conf import settings
+
 # from decimal import Decimal
 
 
@@ -30,7 +33,14 @@ class MenuItem(models.Model):
             ingredients_info[item_ingredient.ingredient.name] = item_ingredient.quantity_required
         return ingredients_info
 
-
+    @property
+    def image_url(self):
+        """Dynamically generates the URL for the image based on the menu item name."""
+        image_name = f"{self.name.lower().replace(' ', '_')}.jpg"  # Generate image name, e.g., "egg_sandwich.jpg"
+        image_path = os.path.join("images", "menu_items", image_name)  # Assuming images are stored in 'images/menu_items/'
+        # static_image_path = os.path.join(settings.STATIC_ROOT, image_path)  # Check in STATIC_ROOT for the file
+        target_url = os.path.join(settings.STATIC_URL, image_path)  # URL to return if the image exists
+        return target_url
 class MenuItemIngredient(models.Model):
     """This model represents the quantity of each ingredient needed for a MenuItem."""
     menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE)
@@ -172,9 +182,10 @@ class Inventory(models.Model):
         }
 
         try:
+            marginal_cost = 0
+            stop = False
             # Get the menu item
             menu_item = MenuItem.objects.get(name=item_name)
-            
             # Get all ingredients needed for this menu item
             ingredients_required = MenuItemIngredient.objects.filter(menu_item=menu_item)
 
@@ -202,6 +213,10 @@ class Inventory(models.Model):
                         'required': required_quantity,
                         'available': ingredient.quantity_in_stock
                     })
+                    total, stop = 0, True
+                if not stop:
+                    marginal_cost += (required_quantity - item_ingredient.quantity_required) * ingredient.cost
+            if not stop: response["total_cost"] = round(menu_item.price + marginal_cost, 2)
             return response
 
         except MenuItem.DoesNotExist:
