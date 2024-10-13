@@ -15,7 +15,7 @@ from RealtimeSTT import AudioToTextRecorder
 # engine = GTTSEngine()
 # stream = TextToAudioStream(engine)
 engine = pyttsx3.init() # object creation
-client = openai.OpenAI(api_key="sk-Lj1Ih_vxZAA5uWDWfqe1RWuVZdKYW519faEN-rhZgzT3BlbkFJbIBj2ehTCZVN_nYywRkrmAqHQfkhHsDaW5rdEEW-AA")
+client = openai.OpenAI(api_key="")
 
 menu = """
     - Burger: Delicious beef burger
