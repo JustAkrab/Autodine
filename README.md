@@ -1,4 +1,4 @@
-# Food Delivery Web App Frontend
+# AutoDine Frontend
 
 ## Project Overview
 This is the frontend part of a food delivery web application. It displays a variety of food items, each having its own card with details like title, rating, and ingredients. The frontend interacts with a server to fetch orders and highlights the relevant food items and their modifications. It also includes a smooth scrolling feature across the page to enhance user experience.
