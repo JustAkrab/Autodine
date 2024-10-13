@@ -1,6 +1,6 @@
-## AutoDine Backend
+## Autodine Backend
 
-This is the backend of **AutoDine**, a chatbot-based food ordering system that processes customer orders by checking item feasibility and placing orders. The backend is built using **Flask** and provides endpoints for checking inventory, placing orders, and retrieving order history.
+This is the backend of **Autodine**, a chatbot-based food ordering system that processes customer orders by checking item feasibility and placing orders. The backend is built using **Django** and provides endpoints for checking inventory, placing orders, and retrieving order history.
 
 ### Table of Contents
 
@@ -27,7 +27,7 @@ This is the backend of **AutoDine**, a chatbot-based food ordering system that p
 
 ### Tech Stack
 
-- **Backend Framework**: Flask (Python)
+- **Backend Framework**: Django (Python)
 - **Language**: Python 3.8+
 - **Dependencies**: Flask, requests
 
