@@ -15,7 +15,7 @@ from RealtimeSTT import AudioToTextRecorder
 # engine = GTTSEngine()
 # stream = TextToAudioStream(engine)
 engine = pyttsx3.init() # object creation
-client = openai.OpenAI(api_key="")
+client = openai.OpenAI(api_key="sk-Lj1Ih_vxZAA5uWDWfqe1RWuVZdKYW519faEN-rhZgzT3BlbkFJbIBj2ehTCZVN_nYywRkrmAqHQfkhHsDaW5rdEEW-AA")
 
 menu = """
     - Burger: Delicious beef burger
@@ -188,4 +188,3 @@ def chatbot_conversation():
 
 if __name__ == "__main__":
     chatbot_conversation()
-    # test_tts()
